@@ -98,7 +98,7 @@ impl<R, W: Write> Game<R, W> {
         let mut cells = Vec::with_capacity(width * height);
         for _ in 0..width * height {
             cells.push(Cell {
-                mine: rng.gen_range(difficulty, 30) < 3,
+                mine: rng.gen_range(difficulty, 20) < 3,
                 state: CellState::Hidden,
             });
         }
@@ -512,12 +512,14 @@ fn main() {
     let stdout = io::stdout();
     let stdout = stdout.lock().into_raw_mode().unwrap();
 
+    let term_size = termion::terminal_size().unwrap();
+
     let mut game = Game::new(
         stdin,
         stdout,
         difficulty.unwrap_or(1),
-        width.unwrap(),
-        height.unwrap(),
+        width.unwrap_or(term_size.0 as usize - 2),
+        height.unwrap_or(term_size.1 as usize - 2),
     );
 
     game.run();
