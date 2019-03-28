@@ -134,7 +134,15 @@ impl<R, W: Write> Game<R, W> {
     fn redraw(&mut self) {
         // NOTE: cursor position is based on (1, 1) as top left NOT (0, 0)
         use termion::cursor::Goto;
-        write!(self.output, "{}{}{}{}", Goto(1, 1), style::Reset, clear::All, CORNER_TL).unwrap();
+        write!(
+            self.output,
+            "{}{}{}{}",
+            Goto(1, 1),
+            style::Reset,
+            clear::All,
+            CORNER_TL
+        )
+        .unwrap();
 
         // draw top border
         for x in 2..self.width + 2 {
@@ -261,19 +269,37 @@ impl<R: Iterator<Item = Result<Key, io::Error>>, W: Write> Game<R, W> {
                     };
 
                     match cell.state {
-                        CellState::Hidden => cell.state = CellState::Flagged,
-                        CellState::Flagged => cell.state = CellState::Hidden,
+                        CellState::Hidden => {
+                            cell.state = CellState::Flagged;
+
+                            write!(
+                                self.output,
+                                "{}{}{}",
+                                termion::cursor::Goto(
+                                    self.cursor.0 as u16 + 2,
+                                    self.cursor.1 as u16 + 2
+                                ),
+                                termion::color::Fg(cell.color()),
+                                cell.as_char()
+                            )
+                            .unwrap();
+                        }
+                        CellState::Flagged => {
+                            cell.state = CellState::Hidden;
+                            write!(
+                                self.output,
+                                "{}{}{}",
+                                termion::cursor::Goto(
+                                    self.cursor.0 as u16 + 2,
+                                    self.cursor.1 as u16 + 2
+                                ),
+                                termion::color::Fg(cell.color()),
+                                cell.as_char()
+                            )
+                            .unwrap();
+                        }
                         _ => (),
                     }
-
-                    write!(
-                        self.output,
-                        "{}{}{}",
-                        termion::cursor::Goto(self.cursor.0 as u16 + 2, self.cursor.1 as u16 + 2),
-                        termion::color::Fg(cell.color()),
-                        cell.as_char()
-                    )
-                    .unwrap();
                 }
                 Key::Char('r') => {
                     self.cells = Self::gen_board(self.difficulty, self.width, self.height);
